@@ -199,8 +199,8 @@ extern "C"
             {
                 inline static constexpr int A = 0b00100000;
                 inline static constexpr int B = 0b01000000;
-                //inline static constexpr int B = 0b00100000;   // On NES style controller b = X
-                inline static constexpr int X  = 0b00010000;
+                // inline static constexpr int B = 0b00100000;   // On NES style controller b = X
+                inline static constexpr int X = 0b00010000;
                 inline static constexpr int Y = 0b10000000;
                 inline static constexpr int SELECT = 0b00010000;
                 inline static constexpr int START = 0b00100000;
@@ -374,7 +374,7 @@ extern "C"
                 gp.buttons =
                     (r->byte6 & MantaPadReport::Button::A ? io::GamePadState::Button::A : 0) |
                     (r->byte6 & MantaPadReport::Button::B ? io::GamePadState::Button::B : 0) |
-                   // (r->byte6 & MantaPadReport::Button::B1 ? io::GamePadState::Button::B : 0) |
+                    // (r->byte6 & MantaPadReport::Button::B1 ? io::GamePadState::Button::B : 0) |
                     (r->byte7 & MantaPadReport::Button::START ? io::GamePadState::Button::START : 0) |
                     (r->byte7 & MantaPadReport::Button::SELECT ? io::GamePadState::Button::SELECT : 0) |
                     (r->byte2 == MantaPadReport::Button::UP ? io::GamePadState::Button::UP : 0) |
@@ -686,9 +686,35 @@ extern "C"
                 break;
 
                 case HID_USAGE_DESKTOP_GAMEPAD:
-                    printf("HID receive gamepad report\n");
+                {
+                    // printf("HID receive gamepad report\n");
+
+                    /*
+                    printf("                        ");
+                    for (int i = 0; i < len; i++)
+                    {
+                        printf("      %02x ", report[i]);
+                    }
+                    printf("\n");
+                    */
+
+                    struct JoyStickReport
+                    {
+                        uint8_t axis[3];
+                        uint8_t buttons;
+                        // 実際のところはしらん
+                    };
+                    auto *rep = reinterpret_cast<const JoyStickReport *>(report);
+                    //                printf("x %d y %d button %02x\n", rep->axis[0], rep->axis[1], rep->buttons);
+                    auto &gp = io::getCurrentGamePadState(0);
+                    gp.axis[0] = rep->axis[0];
+                    gp.axis[1] = rep->axis[1];
+                    gp.axis[2] = rep->axis[2];
+                    gp.buttons = rep->buttons;
+                    gp.convertButtonsFromAxis(0, 1);
 
                     break;
+                }
 
                 default:
                     break;

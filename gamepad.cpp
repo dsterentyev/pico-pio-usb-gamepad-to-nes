@@ -25,20 +25,20 @@ namespace io
         int x = axis[axisX];
         int y = axis[axisY];
 
-        if (x < 64)
+        if (x < 32)
         {
             buttons |= Button::LEFT;
         }
-        else if (x > 192)
+        else if (x > 160)
         {
             buttons |= Button::RIGHT;
         }
 
-        if (y < 64)
+        if (y < 32)
         {
             buttons |= Button::UP;
         }
-        else if (y > 192)
+        else if (y > 160)
         {
             buttons |= Button::DOWN;
         }

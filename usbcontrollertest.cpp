@@ -2,6 +2,22 @@
 #include "pico/stdlib.h"
 #include "hardware/watchdog.h"
 #include <gamepad.h>
+#include "hardware/gpio.h"
+#include "pico/multicore.h"
+
+#define PIN_DATA  27  // RP2040 output to NES controller port
+#define PIN_LATCH 28  // NES input: Latch (high pulse starts report)
+#define PIN_CLOCK 29  // NES input: Clock (falling edge shifts bit)
+
+#define PIN_DATA_2  14  // RP2040 output to NES controller port
+#define PIN_LATCH_2 15  // NES input: Latch (high pulse starts report)
+#define PIN_CLOCK_2 26  // NES input: Clock (falling edge shifts bit)
+
+volatile uint8_t nes_button_state = 0xFF; // Populated externally
+volatile uint8_t bit_index = 0;
+volatile uint8_t nes_button_state_2 = 0xFF; 
+volatile uint8_t bit_index_2 = 0;
+
 #if CFG_TUH_RPI_PIO_USB
 #include "bsp/board_api.h"
 #endif
@@ -53,6 +69,20 @@ void InfoNES_PadState(DWORD *pdwPad1, DWORD *pdwPad2, DWORD *pdwSystem)
         auto p1 = v;
         auto pushed = v & ~prevButtons[i];
 
+        prevButtons[i] = v;
+
+        if(i == 0)
+            nes_button_state = static_cast<int8_t>(~v & 0xFF);
+        else
+            nes_button_state_2 = static_cast<int8_t>(~v & 0xFF);
+
+        //comment return for showing buttons states via serial console (gpio0)
+        return;    
+        
+        if (pushed)
+        {
+            printf("%8b\n", nes_button_state);
+        }
         if (pushed & LEFT)
         {
             printf("LEFT\n");
@@ -88,7 +118,62 @@ void InfoNES_PadState(DWORD *pdwPad1, DWORD *pdwPad2, DWORD *pdwSystem)
             printf("DOWN\n");
         }
 
-        prevButtons[i] = v;
+    }
+}
+
+void nes_gpio_isr(uint gpio, uint32_t events) {
+    if (gpio == PIN_LATCH) {
+        // if (events & GPIO_IRQ_EDGE_RISE) {
+            bit_index = 0;
+            gpio_put(PIN_DATA, (nes_button_state >> bit_index) & 1);
+        // }
+    } else if (gpio == PIN_CLOCK) {
+        // if (events & GPIO_IRQ_EDGE_FALL) {
+            bit_index++;
+            if (bit_index < 8) {
+                gpio_put(PIN_DATA, (nes_button_state >> bit_index) & 1);
+            } else {
+                gpio_put(PIN_DATA, 1); // NES reads high after 8 bits
+            }
+        // }
+    }
+    else if (gpio == PIN_LATCH_2) {
+        if (events & GPIO_IRQ_EDGE_RISE) {
+            bit_index_2 = 0;
+            gpio_put(PIN_DATA_2, (nes_button_state_2 >> bit_index_2) & 1);
+        }
+    } else if (gpio == PIN_CLOCK_2) {
+        if (events & GPIO_IRQ_EDGE_FALL) {
+            bit_index_2++;
+            if (bit_index_2 < 8) {
+                gpio_put(PIN_DATA_2, (nes_button_state_2 >> bit_index_2) & 1);
+            } else {
+                gpio_put(PIN_DATA_2, 1); // NES reads high after 8 bits
+            }
+        }
+    }
+}
+
+void nes_joystick_init(void) {
+    gpio_init(PIN_DATA);
+    gpio_set_dir(PIN_DATA, GPIO_OUT);
+    gpio_put(PIN_DATA, 1);
+
+    gpio_init(PIN_LATCH);
+    gpio_set_dir(PIN_LATCH, GPIO_IN);
+    
+    gpio_init(PIN_CLOCK);
+    gpio_set_dir(PIN_CLOCK, GPIO_IN);
+
+    gpio_set_irq_enabled_with_callback(PIN_LATCH, GPIO_IRQ_EDGE_RISE, true, &nes_gpio_isr);
+    gpio_set_irq_enabled(PIN_CLOCK, GPIO_IRQ_EDGE_RISE, true);
+
+    irq_set_enabled(IO_IRQ_BANK0, true);
+}
+
+void core1_entry(void) {
+    nes_joystick_init();
+    while (true) {
     }
 }
 
@@ -112,8 +197,12 @@ int main()
     }
 #else
     printf("Using internal USB.\n");
-    tusb_init();
+    tuh_init(BOARD_TUH_RHPORT) ;
+    // tusb_init();
 #endif
+
+    multicore_launch_core1(core1_entry);
+
     while (true)
     {
         // printf("Hello, world!\n");
