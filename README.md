@@ -10,6 +10,8 @@ Building command:
 
 ```cd build && cmake -DBOARD=pico_sdk -DPICO_BOARD=pico -DENABLE_PIO_USB=0 .. && make```
 
+The fork partially created with AI
+
 Original description folowing below:
 
 # USB Gamepad Test Program for RP2040/RP2350 microcontrollers using PIO USB
