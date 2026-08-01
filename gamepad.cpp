@@ -25,7 +25,7 @@ namespace io
         int x = axis[axisX];
         int y = axis[axisY];
 
-        if (x < 32)
+        if (x < 96)
         {
             buttons |= Button::LEFT;
         }
@@ -34,7 +34,7 @@ namespace io
             buttons |= Button::RIGHT;
         }
 
-        if (y < 32)
+        if (y < 96)
         {
             buttons |= Button::UP;
         }
