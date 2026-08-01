@@ -1,3 +1,12 @@
+This is a fork of the **fhoedemakers/pico-pio-usb-gamepad-test** repository with the addition of an NES joystick pin to GPIOs 27-29 (data, latch, and clock, respectively) and partially removed debug output to the serial port (GPIO0). Minor fixes have also been made to improve compatibility with the latest version of the PICO SDK and TinyUSB.
+Target board is YD-RP2040 Zero
+
+Building command:
+
+```cd build && cmake -DBOARD=pico_sdk -DPICO_BOARD=pico -DENABLE_PIO_USB=0 .. && make```
+
+Original description folowing below:
+
 # USB Gamepad Test Program for RP2040/RP2350 microcontrollers using PIO USB
 
 This C++ project demonstrates USB gamepad support on RP2040 and RP2350-based boards using PIO USB.  
