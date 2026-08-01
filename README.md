@@ -1,5 +1,10 @@
 This is a fork of the **fhoedemakers/pico-pio-usb-gamepad-test** repository with the addition of an NES joystick pin to GPIOs 27-29 (data, latch, and clock, respectively) and partially removed debug output to the serial port (GPIO0). Minor fixes have also been made to improve compatibility with the latest version of the PICO SDK and TinyUSB.
-Target board is YD-RP2040 Zero
+
+Target board is RP2040 Zero, internal USB port used for attaching gamepad.
+
+Pinout is trivial:
+
+<img width="362" height="313" alt="pinout" src="https://github.com/user-attachments/assets/80f34026-e085-45bd-9e74-a9ede464600d" />
 
 Building command:
 
